@@ -1,7 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
 
-// Функция обязательна для динамических страниц в статическом режиме (SSG)
 export async function getStaticPaths() {
   const guides = await getCollection('guides');
   return guides.map((guide) => ({
@@ -11,7 +10,18 @@ export async function getStaticPaths() {
 }
 
 const { guide } = Astro.props;
-const { data } = guide;
+const data = guide.data as any;
+
+// Загружаем справочники для подтягивания иконок и названий
+const characters = await getCollection('characters' as any);
+const weapons = await getCollection('weapons' as any);
+const echoSets = await getCollection('echoSets' as any);
+
+const charMap = new Map(characters.map((c: any) => [c.data?.id || c.id, c.data]));
+const weaponMap = new Map(weapons.map((w: any) => [w.data?.id || w.id, w.data]));
+const echoMap = new Map(echoSets.map((e: any) => [e.data?.id || e.id, e.data]));
+
+const charData = charMap.get(data.characterId) || {};
 ---
 
 <html lang="ru">
@@ -19,14 +29,192 @@ const { data } = guide;
     <meta charset="utf-8" />
     <title>{data.title} — Гайд Wuthering Waves</title>
     <style>
-      body { background: #0b0f17; color: #f8fafc; font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-      a { color: #38bdf8; text-decoration: none; }
+      :root {
+        --bg-main: #0b0f17;
+        --card-bg: #161e2e;
+        --card-border: #2a364f;
+        --accent: #38bdf8;
+        --text: #f8fafc;
+        --text-sub: #94a3b8;
+      }
+      body {
+        background-color: var(--bg-main);
+        color: var(--text);
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+      }
+      .back-link {
+        color: var(--accent);
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+      }
+      .hero-card {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 2rem;
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+      .hero-art {
+        width: 150px;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid var(--accent);
+      }
+      .section-box {
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      h2 { color: var(--accent); border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
+      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+      .tag { background: #090d16; color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; }
+      .team-row { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; background: #0b0f17; padding: 0.8rem; border-radius: 10px; }
+      .team-avatars { display: flex; gap: 0.5rem; }
+      .team-avatars img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+      .item-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.8rem; background: #0b0f17; padding: 0.8rem; border-radius: 10px; }
+      .item-icon { width: 40px; height: 40px; object-fit: contain; }
     </style>
   </head>
   <body>
-    <a href="/">← На главную</a>
-    <h1>{data.title}</h1>
-    <p><strong>Элемент:</strong> {data.element} | <strong>Роль:</strong> {data.role}</p>
-    <p>{data.description}</p>
+    <div class="container">
+      <a href="/" class="back-link">← На главную к списку гайдов</a>
+
+      <!-- Шапка персонажа -->
+      <div class="hero-card">
+        {data.fullArt && <img src={data.fullArt} alt={data.title} class="hero-art" />}
+        <div>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span class="tag">{data.element}</span>
+            <span class="tag">{data.rarity}★</span>
+            <span class="tag">{data.weaponType}</span>
+          </div>
+          <h1 style="margin: 0 0 0.5rem 0; font-size: 2.2rem;">{data.title}</h1>
+          <p style="color: var(--text-sub); margin: 0;">Роль: <strong>{data.role}</strong></p>
+          {data.description && <p style="margin-top: 0.8rem; color: var(--text-sub);">{data.description}</p>}
+        </div>
+      </div>
+
+      <!-- Статы и приоритеты -->
+      <div class="grid-2">
+        {data.baseStats && (
+          <div class="section-box">
+            <h2>Базовые статы</h2>
+            <p>HP: <strong>{data.baseStats.hp}</strong></p>
+            <p>ATK: <strong>{data.baseStats.atk}</strong></p>
+            <p>DEF: <strong>{data.baseStats.def}</strong></p>
+          </div>
+        )}
+
+        <div class="section-box">
+          <h2>Приоритеты</h2>
+          <p><strong>Статы артефактов:</strong></p>
+          <div class="tag-list">
+            {data.statPriorities?.map((stat: string) => <span class="tag">{stat}</span>)}
+          </div>
+          <p style="margin-top: 1rem;"><strong>Прокачка скиллов:</strong></p>
+          <div class="tag-list">
+            {data.skillPriority?.map((skill: string) => <span class="tag">{skill}</span>)}
+          </div>
+        </div>
+      </div>
+
+      <!-- Оружие и Эхо -->
+      <div class="grid-2">
+        <div class="section-box">
+          <h2>Рекомендуемое оружие</h2>
+          {data.recommendedWeapons?.map((wId: string) => {
+            const weapon = weaponMap.get(wId);
+            return weapon ? (
+              <div class="item-row">
+                {weapon.icon && <img src={weapon.icon} alt={weapon.name} class="item-icon" />}
+                <div>
+                  <strong>{weapon.name}</strong>
+                  <div style="font-size: 0.8rem; color: var(--text-sub);">{weapon.rarity}★ Редкость</div>
+                </div>
+              </div>
+            ) : <p>{wId}</p>;
+          })}
+        </div>
+
+        <div class="section-box">
+          <h2>Сеты Эхо</h2>
+          {data.recommendedEchoSets?.map((eId: string) => {
+            const echo = echoMap.get(eId);
+            return echo ? (
+              <div class="item-row">
+                {echo.icon && <img src={echo.icon} alt={echo.name} class="item-icon" />}
+                <div><strong>{echo.name}</strong></div>
+              </div>
+            ) : <p>{eId}</p>;
+          })}
+        </div>
+      </div>
+
+      <!-- Команды -->
+      {data.teams && data.teams.length > 0 && (
+        <div class="section-box">
+          <h2>Рекомендуемые команды</h2>
+          {data.teams.map((team: any) => (
+            <div class="team-row">
+              <div style="flex-grow: 1;">
+                <strong>{team.name}</strong>
+              </div>
+              <div class="team-avatars">
+                {team.memberIds?.map((mId: string) => {
+                  const member = charMap.get(mId);
+                  return member?.avatar ? <img src={member.avatar} alt={member.name} title={member.name} /> : null;
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <!-- Консты (Resonances) -->
+      {data.resonances && data.resonances.length > 0 && (
+        <div class="section-box">
+          <h2>Созвездия (Резонансы)</h2>
+          {data.resonances.map((res: any) => (
+            <div style="margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
+              <h3 style="margin: 0 0 0.3rem 0; color: var(--accent);">S{res.sequence} — {res.name}</h3>
+              <p style="margin: 0 0 0.5rem 0; color: var(--text-sub);">{res.description}</p>
+              <p style="margin: 0; font-size: 0.9rem;">💡 <em>Полезность:</em> {res.utilityReview}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <!-- Скиллсет -->
+      {data.skills && data.skills.length > 0 && (
+        <div class="section-box">
+          <h2>Способности (Скиллсет)</h2>
+          {data.skills.map((s: any) => (
+            <div style="margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: var(--accent);">{s.name}</h3>
+                <span class="tag">{s.type}</span>
+              </div>
+              <p style="margin: 0.5rem 0 0 0; color: var(--text-sub);">{s.description}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+    </div>
   </body>
 </html>
