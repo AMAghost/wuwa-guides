@@ -1,0 +1,36 @@
+backend:
+  name: git-gateway
+  branch: main # или master, в зависимости от имени вашей ветки
+
+media_folder: "public/images/uploads" # Куда сохранять картинки
+public_folder: "/images/uploads"
+
+collections:
+  - name: "guides"
+    label: "Гайды на персонажей"
+    folder: "src/content/guides"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Имя персонажа", name: "title", widget: "string" }
+      - { 
+          label: "Элемент", 
+          name: "element", 
+          widget: "select", 
+          options: ["Aero", "Glacio", "Fusion", "Electro", "Havoc", "Spectro"] 
+        }
+      - { 
+          label: "Оружие", 
+          name: "weapon", 
+          widget: "select", 
+          options: ["Broadblade", "Sword", "Pistols", "Gauntlets", "Rectifier"] 
+        }
+      - { 
+          label: "Редкость", 
+          name: "rarity", 
+          widget: "select", 
+          options: ["4★", "5★"] 
+        }
+      - { label: "Роль в отряде", name: "role", widget: "string", default: "Main DPS" }
+      - { label: "Краткое описание", name: "description", widget: "string" }
+      - { label: "Текст гайда", name: "body", widget: "markdown" }
