@@ -1,6 +1,5 @@
 ---
 import { getCollection } from 'astro:content';
-
 const guides = await getCollection('guides');
 ---
 
@@ -10,9 +9,18 @@ const guides = await getCollection('guides');
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <title>WuWa Guides | Гайды Wuthering Waves</title>
-    <!-- Скрипт авторизации Netlify Identity -->
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    
+    <script>
+		// @ts-ignore
+		import netlifyIdentity from 'netlify-identity-widget';
+		
+		// Говорим TypeScript, что это динамическое свойство
+		(window as any).netlifyIdentity = netlifyIdentity;
+		netlifyIdentity.init();
+	</script>
+    
     <style>
+      /* Ваши стили остаются здесь */
       :root {
         --bg-color: #0f172a;
         --card-bg: #1e293b;
