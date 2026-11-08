@@ -1,36 +1,103 @@
 backend:
   name: git-gateway
-  branch: main # или master, в зависимости от имени вашей ветки
+  branch: main
 
-media_folder: "public/images/uploads" # Куда сохранять картинки
-public_folder: "/images/uploads"
+media_folder: "public/uploads"
+public_folder: "/uploads"
 
 collections:
+  # --- СПРАВОЧНИК ПЕРСОНАЖЕЙ ---
+  - name: "characters"
+    label: "База Персонажей (Иконки)"
+    folder: "src/content/characters"
+    create: true
+    format: "json"
+    slug: "{{id}}"
+    fields:
+      - { label: "ID Персонажа (англ., например: jiyan)", name: "id", widget: "string" }
+      - { label: "Имя", name: "name", widget: "string" }
+      - { label: "Иконка/Аватар", name: "avatar", widget: "image" }
+
+  # --- СПРАВОЧНИК ОРУЖИЯ ---
+  - name: "weapons"
+    label: "База Оружия"
+    folder: "src/content/weapons"
+    create: true
+    format: "json"
+    slug: "{{id}}"
+    fields:
+      - { label: "ID Оружия", name: "id", widget: "string" }
+      - { label: "Название", name: "name", widget: "string" }
+      - { label: "Редкость (звезд)", name: "rarity", widget: "number", value_type: "int" }
+      - { label: "Иконка", name: "icon", widget: "image" }
+
+  # --- СПРАВОЧНИК ЭХО ---
+  - name: "echoSets"
+    label: "База Сетов Эхо"
+    folder: "src/content/echoSets"
+    create: true
+    format: "json"
+    slug: "{{id}}"
+    fields:
+      - { label: "ID Сета", name: "id", widget: "string" }
+      - { label: "Название", name: "name", widget: "string" }
+      - { label: "Иконка", name: "icon", widget: "image" }
+
+  # --- ПОЛНЫЙ ГАЙД ---
   - name: "guides"
-    label: "Гайды на персонажей"
+    label: "Гайды"
     folder: "src/content/guides"
     create: true
-    slug: "{{slug}}"
     fields:
-      - { label: "Имя персонажа", name: "title", widget: "string" }
-      - { 
-          label: "Элемент", 
-          name: "element", 
-          widget: "select", 
-          options: ["Aero", "Glacio", "Fusion", "Electro", "Havoc", "Spectro"] 
-        }
-      - { 
-          label: "Оружие", 
-          name: "weapon", 
-          widget: "select", 
-          options: ["Broadblade", "Sword", "Pistols", "Gauntlets", "Rectifier"] 
-        }
-      - { 
-          label: "Редкость", 
-          name: "rarity", 
-          widget: "select", 
-          options: ["4★", "5★"] 
-        }
-      - { label: "Роль в отряде", name: "role", widget: "string", default: "Main DPS" }
-      - { label: "Краткое описание", name: "description", widget: "string" }
-      - { label: "Текст гайда", name: "body", widget: "markdown" }
+      - { label: "ID Персонажа", name: "characterId", widget: "relation", collection: "characters", search_fields: ["name", "id"], value_field: "id", display_fields: ["name"] }
+      - { label: "Заголовок Гайда", name: "title", widget: "string" }
+      - { label: "Стихия", name: "element", widget: "select", options: ["Aero", "Spectro", "Fusion", "Conductive", "Glacio", "Havoc"] }
+      - { label: "Тип оружия", name: "weaponType", widget: "select", options: ["Broadblade", "Sword", "Pistols", "Gauntlets", "Rectifier"] }
+      - { label: "Редкость", name: "rarity", widget: "number", value_type: "int" }
+      - { label: "Роль", name: "role", widget: "string" }
+      - { label: "Арт персонажа (Full Art)", name: "fullArt", widget: "image" }
+
+      # Статы и приоритеты
+      - label: "Базовые статы"
+        name: "baseStats"
+        widget: "object"
+        fields:
+          - { label: "HP", name: "hp", widget: "number", value_type: "int" }
+          - { label: "ATK", name: "atk", widget: "number", value_type: "int" }
+          - { label: "DEF", name: "def", widget: "number", value_type: "int" }
+
+      - { label: "Приоритет статов в артефактах", name: "statPriorities", widget: "list" }
+      - { label: "Приоритет прокачки скиллов", name: "skillPriority", widget: "list" }
+
+      # Связи с оружием и эхо по ID
+      - { label: "Рекомендуемое оружие", name: "recommendedWeapons", widget: "relation", collection: "weapons", multiple: true, search_fields: ["name"], value_field: "id", display_fields: ["name"] }
+      - { label: "Рекомендуемые сеты Эхо", name: "recommendedEchoSets", widget: "relation", collection: "echoSets", multiple: true, search_fields: ["name"], value_field: "id", display_fields: ["name"] }
+
+      # Команды (3 картинки персонажей)
+      - label: "Рекомендуемые команды"
+        name: "teams"
+        widget: "list"
+        fields:
+          - { label: "Название пачки", name: "name", widget: "string" }
+          - { label: "Состав (ровно 3 персонажа)", name: "memberIds", widget: "relation", collection: "characters", multiple: true, search_fields: ["name"], value_field: "id", display_fields: ["name"] }
+
+      # Консты
+      - label: "Резонансы / Созвездия (Консты)"
+        name: "resonances"
+        widget: "list"
+        fields:
+          - { label: "Номер (1-6)", name: "sequence", widget: "number", value_type: "int" }
+          - { label: "Название", name: "name", widget: "string" }
+          - { label: "Описание работы", name: "description", widget: "text" }
+          - { label: "Оценка и полезность", name: "utilityReview", widget: "text" }
+
+      # Скиллсет
+      - label: "Способности (Скиллсет)"
+        name: "skills"
+        widget: "list"
+        fields:
+          - { label: "Название скилла", name: "name", widget: "string" }
+          - { label: "Тип (Normal/Skill/Liberation/Forte)", name: "type", widget: "string" }
+          - { label: "Подробное описание", name: "description", widget: "text" }
+
+      - { label: "Текст гайда / Общий гайд", name: "body", widget: "markdown" }
