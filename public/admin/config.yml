@@ -66,8 +66,24 @@ collections:
           - { label: "ATK", name: "atk", widget: "number", value_type: "int" }
           - { label: "DEF", name: "def", widget: "number", value_type: "int" }
 
-      - { label: "Приоритет статов в артефактах", name: "statPriorities", widget: "list" }
-      - { label: "Приоритет прокачки скиллов", name: "skillPriority", widget: "list" }
+      # --- Приоритет статов (каждый стат отдельным полем с возможностью сортировки) ---
+      - label: "Приоритет статов в артефактах"
+        name: "statPriorities"
+        widget: "list"
+        fields:
+          - { label: "Название стата (например: Крит. урон, АТК%)", name: "statName", widget: "string" }
+
+      # --- Приоритет прокачки скиллов (с группами равного приоритета) ---
+      - label: "Приоритет прокачки скиллов"
+        name: "skillPriority"
+        widget: "list"
+        fields:
+          - { label: "Ранг приоритета (например: Приоритет 1, Равнозначно)", name: "tier", widget: "string" }
+          - label: "Навыки этого уровня"
+            name: "skillsList"
+            widget: "list"
+            fields:
+              - { label: "Название навыка", name: "skill", widget: "string" }
 
       # Связи с оружием и эхо по ID
       - { label: "Рекомендуемое оружие", name: "recommendedWeapons", widget: "relation", collection: "weapons", multiple: true, search_fields: ["name"], value_field: "id", display_fields: ["name"] }
