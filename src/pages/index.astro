@@ -3,14 +3,14 @@ import { getCollection } from 'astro:content';
 
 // 1. Загружаем все коллекции
 const guides = await getCollection('guides');
-const characters = await getCollection('characters');
-const weapons = await getCollection('weapons');
-const echoSets = await getCollection('echoSets');
+const characters = (await getCollection('characters' as any)) || [];
+const weapons = (await getCollection('weapons' as any)) || [];
+const echoSets = (await getCollection('echoSets' as any)) || [];
 
-// Создаем удобные словари (Map) для быстрого поиска иконок и названий по ID
-const charMap = new Map(characters.map((c) => [c.data.id, c.data]));
-const weaponMap = new Map(weapons.map((w) => [w.data.id, w.data]));
-const echoMap = new Map(echoSets.map((e) => [e.data.id, e.data]));
+// 2. Создаем удобные словари (Map) с защитой от типов
+const charMap = new Map(characters.map((c: any) => [c.data?.id || c.id, c.data]));
+const weaponMap = new Map(weapons.map((w: any) => [w.data?.id || w.id, w.data]));
+const echoMap = new Map(echoSets.map((e: any) => [e.data?.id || e.id, e.data]));
 ---
 
 <html lang="ru">
@@ -145,50 +145,48 @@ const echoMap = new Map(echoSets.map((e) => [e.data.id, e.data]));
       <h2>Гайды и Билды Персонажей</h2>
       <div class="grid">
         {guides.map((guide) => {
-          // Находим информацию о персонаже в базе
-          const charData = charMap.get(guide.data.characterId);
-          // Берем главную пачку для превью
-          const mainTeam = guide.data.teams?.[0];
+			const charData = charMap.get(guide.data.characterId) as any;
+			const mainTeam = guide.data.teams?.[0] as any;
+			const data = guide.data as any;
 
-          return (
-            <a href={`/guides/${guide.id}`} class="card">
-              <div>
-                <div class="card-header">
-                  {charData?.avatar && (
-                    <img src={charData.avatar} alt={charData.name} class="char-avatar" />
-                  )}
-                  <div>
-                    <div class="meta-tags">
-                      <span class="tag">{guide.data.element}</span>
-                      <span class="tag">{guide.data.rarity}★</span>
-                    </div>
-                    <h3 style="margin: 0; font-size: 1.2rem;">{guide.data.title}</h3>
-                    <small style="color: var(--text-sub);">{guide.data.role}</small>
-                  </div>
-                </div>
+			return (
+				<a href={`/guides/${guide.id}`} class="card">
+				<div>
+					<div class="card-header">
+					{charData?.avatar && (
+						<img src={charData.avatar} alt={charData?.name || 'Character'} class="char-avatar" />
+					)}
+					<div>
+						<div class="meta-tags">
+						<span class="tag">{data.element}</span>
+						<span class="tag">{data.rarity}★</span>
+						</div>
+						<h3 style="margin: 0; font-size: 1.2rem;">{data.title}</h3>
+						<small style="color: var(--text-sub);">{data.role}</small>
+					</div>
+					</div>
 
-                <p style="color: var(--text-sub); font-size: 0.9rem; line-height: 1.4; margin: 0 0 1rem 0;">
-                  {guide.data.description}
-                </p>
-              </div>
+					<p style="color: var(--text-sub); font-size: 0.9rem; line-height: 1.4; margin: 0 0 1rem 0;">
+					{data.description}
+					</p>
+				</div>
 
-              <!-- Превью топовой пачки (3 иконки) -->
-              {mainTeam && (
-                <div class="team-preview">
-                  <span>Рекомендуемый состав ({mainTeam.name}):</span>
-                  <div class="team-icons">
-                    {mainTeam.memberIds.map((memberId) => {
-                      const member = charMap.get(memberId);
-                      return member?.avatar ? (
-                        <img src={member.avatar} alt={member.name} title={member.name} />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-            </a>
-          );
-        })}
+				{mainTeam && (
+					<div class="team-preview">
+					<span>Рекомендуемый состав ({mainTeam.name}):</span>
+					<div class="team-icons">
+						{mainTeam.memberIds?.map((memberId: string) => {
+						const member = charMap.get(memberId) as any;
+						return member?.avatar ? (
+							<img src={member.avatar} alt={member.name} title={member.name} />
+						) : null;
+						})}
+					</div>
+					</div>
+				)}
+				</a>
+			);
+		})}
       </div>
     </main>
   </body>
